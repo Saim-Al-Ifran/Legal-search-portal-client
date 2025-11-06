@@ -1,53 +1,59 @@
-import { useEffect,  useState } from "react";
+import { useEffect, useState } from "react";
+import { axiosInstance } from "./api/axiosInstance";
 import { Loader } from "./components/Loader";
-import { ResponseCard } from "./components/ResponseCard";
 import { LoaderScreen } from "./components/LoaderScreen";
+import { ResponseCard } from "./components/ResponseCard";
+import type { LegalResponse } from "./types/types";
 
-const mockResponse = {
-  query: "What is the difference between civil and criminal law?",
-  summary:
-    "Civil law deals with disputes between individuals or organizations, while criminal law involves offenses against the state and carries punishments such as imprisonment or fines.",
-};
+
 
 export default function App() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [response, setResponse] = useState<typeof mockResponse | null>(null);
+  const [responses, setResponses] = useState<LegalResponse[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
- 
-  
-useEffect(() => {
-  const timer = setTimeout(() => {
-    setInitialLoading(false);
-  }, 1800); // Slightly longer for realism
-  return () => clearTimeout(timer);
-}, []);
 
-if (initialLoading) {
-  return <LoaderScreen />;
-}
-  const handleSearch = () => {
+  // Simulated intro loader
+  useEffect(() => {
+    const timer = setTimeout(() => setInitialLoading(false), 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (initialLoading) return <LoaderScreen />;
+
+  const handleSearch = async () => {
     if (!query.trim()) {
-      setError("Please enter a query before searching.");
+      setError("Please enter a title before searching.");
       return;
     }
+
     setError("");
     setLoading(true);
+    setResponses([]);
 
-    setTimeout(() => {
-      setResponse(mockResponse);
+    try {
+      const res = await axiosInstance.post<LegalResponse[]>("/generate", { query });
+      console.log(res.data);
+      setResponses(res.data);
+    } catch (err: any) {
+      console.error(err);
+      setError(
+        err.response?.data?.error ||
+        "Failed to fetch response from the backend."
+      );
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
 
   return (
     <div className="min-h-screen bg-linear-to-r from-amber-100 via-rose-100 to-slate-100 flex flex-col items-center justify-center px-4 py-10">
       <div className="w-full max-w-3xl bg-white/90 backdrop-blur-md rounded-3xl shadow-xl p-10 border border-rose-200">
-      <h1 className="text-3xl font-bold text-center text-slate-800 mb-8 flex items-center justify-center gap-3">
-        <i className="fas fa-scale-balanced text-rose-400"></i>
-        Ask Legal AI
-      </h1>
+        <h1 className="text-3xl font-bold text-center text-slate-800 mb-8 flex items-center justify-center gap-3">
+          <i className="fas fa-scale-balanced text-rose-400"></i>
+          Ask Legal AI
+        </h1>
 
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <input
@@ -73,14 +79,22 @@ if (initialLoading) {
         )}
 
         {loading && <Loader />}
-        {response && !loading && <ResponseCard response={response} />}
-        {response && !loading && <ResponseCard response={response} />}
+
+        {!loading && responses.length > 0 && (
+          <div className="space-y-6">
+            {responses.map((item, index) => (
+              <ResponseCard
+                key={index}
+                response={{ title: item.title, content: item.summary }}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
-<p className="text-slate-400 text-xs mt-6 text-center italic">
-  Ask Legal AI • Prototype v1.0 • Educational Use Only
-</p>
-
+      <p className="text-slate-400 text-xs mt-6 text-center italic">
+        Ask Legal AI • Prototype v1.0 • Educational Use Only
+      </p>
     </div>
   );
 }
