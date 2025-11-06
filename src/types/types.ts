@@ -8,4 +8,5 @@ export interface ResponseCardProps {
     title: string;
     content: string;
   };
+  query?: string; 
 }

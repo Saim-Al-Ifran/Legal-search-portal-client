@@ -83,11 +83,13 @@ export default function App() {
         {!loading && responses.length > 0 && (
           <div className="space-y-6">
             {responses.map((item, index) => (
-              <ResponseCard
-                key={index}
-                response={{ title: item.title, content: item.summary }}
-              />
-            ))}
+            <ResponseCard
+              key={index}
+              response={{ title: item.title, content: item.summary }}
+              query={query} // ✅ pass query to highlight
+            />
+          ))}
+
           </div>
         )}
       </div>
